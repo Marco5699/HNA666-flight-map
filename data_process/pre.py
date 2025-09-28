@@ -109,18 +109,9 @@ def process_flight_data():
     df_flight = None
     
     # 先尝试读取md文件
-    if Path("v0910.md").exists():
-        df_flight = read_md_to_excel("v0910.md")
+    if Path("v0924.md").exists():
+        df_flight = read_md_to_excel("v0924.md")
         print("成功读取md文件")
-    
-    # 如果md文件不存在或读取失败，读取Excel文件
-    if df_flight is None:
-        try:
-            df_flight = pd.read_excel('v0910origin.xlsx')
-            print("成功读取Excel文件")
-        except:
-            print("无法读取数据文件")
-            return
     
     print(f"原始数据: {len(df_flight)} 行")
     
@@ -153,15 +144,27 @@ def process_flight_data():
     
     # 5. 标准化机场名
     if airport_mapping:
-        print("标准化机场名...")
         def find_airport_name(city_name):
+            # 先检查自定义词典映射
+            custom_mapping = {
+                '重庆万州': '万州/五桥',
+                # '原始名称': '标准化名称',
+            }
+            
+            # 检查自定义映射
+            city_str = str(city_name).strip()
+            for original, standard in custom_mapping.items():
+                if original in city_str:
+                    return standard
+            
+            # 原有的机场映射逻辑
             for full_name, short_name in airport_mapping.items():
                 if str(city_name) in str(full_name) or str(full_name) in str(city_name):
                     return short_name
             return city_name
-        
-        df_flight['出港城市'] = df_flight['出港城市'].apply(find_airport_name)
-        df_flight['到港城市'] = df_flight['到港城市'].apply(find_airport_name)
+    
+    df_flight['出港城市'] = df_flight['出港城市'].apply(find_airport_name)
+    df_flight['到港城市'] = df_flight['到港城市'].apply(find_airport_name)
     
     # 6. 添加到达时刻列
     departure_col_index = df_flight.columns.get_loc('出发时刻')
@@ -177,7 +180,7 @@ def process_flight_data():
     
     # 9. 保存到一个Excel文件的两个sheet中
     print("保存数据文件...")
-    output_file = 'v0910.xlsx'
+    output_file = 'v0924.xlsx'
     
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
         # 保存完整数据到2666 sheet
